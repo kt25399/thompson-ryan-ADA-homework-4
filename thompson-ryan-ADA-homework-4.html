@@ -946,6 +946,7 @@ lme5 &lt;- lmer(data = new, log(rate) ~ log(gdp_capita) + soc_dist + mov_rest + 
                   REML = FALSE)
 
 null &lt;- lmer(data = new, log(rate) ~ (1 | country) + (1 | date), REML = FALSE)
+
 aic_table &lt;- aictab(list(lme, lme2, lme3, lme4, lme5, null))</code></pre>
 <pre><code>## Warning in aictab.AIClmerMod(list(lme, lme2, lme3, lme4, lme5, null)): 
 ## Model names have been supplied automatically in the table</code></pre>

@@ -417,6 +417,7 @@ lme5 <- lmer(data = new, log(rate) ~ log(gdp_capita) + soc_dist + mov_rest + (1 
                   REML = FALSE)
 
 null <- lmer(data = new, log(rate) ~ (1 | country) + (1 | date), REML = FALSE)
+
 aic_table <- aictab(list(lme, lme2, lme3, lme4, lme5, null))
 aic_table
 ```
