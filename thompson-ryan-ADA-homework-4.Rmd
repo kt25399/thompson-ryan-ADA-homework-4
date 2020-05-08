@@ -12,7 +12,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Libraries 
 
 ```{r include = FALSE}
+library(MASS)
 library(tidyverse)
+library(dplyr)
 library(patchwork) # for plotting
 library(scales) # for log y axis scale
 library(collapse) # for `fmode()` to find mode
@@ -20,6 +22,10 @@ library(BBmisc) # for %nin%
 library(devtools)
 remotes::install_github("joachim-gassen/tidycovid19")
 library(tidycovid19)
+library(MuMIn)
+library(lme4)
+library(lmtest)
+library(AICcmodavg)
 ```
 
 ## cv_data data frame
@@ -259,37 +265,158 @@ head(daily, 10)
 
 ## Challenge 5
 ```{r}
-### Challenge 5
-d <- d %>% mutate(lograte = log(rate),
-                  logdensity = log(density))
-density <- lm(rate ~ density, data = d)
-density
+### Density
+density <- lm(rate ~ density, data = overall)
+summary(density)
 
-ggplot(d, aes(x = density, y = rate)) +
+ggplot(overall, aes(x = density, y = rate)) +
   geom_point() + 
   geom_smooth(formula = y ~ x, method = "lm", se = FALSE)
 
-population <- lm(rate ~ population, data = d)
-population
+hist(resid(density))
+plot(density, which = 1)
+plot(density, which = 2)
 
-ggplot(d, aes(x = population, y = rate)) + 
+overall <- overall %>% mutate(logdensity = log(density), lograte = log(rate + 1))
+
+density <- lm(lograte ~ logdensity, data = overall)
+summary(density)
+
+ggplot(overall, aes(x = logdensity, y = lograte)) +
   geom_point() + 
   geom_smooth(formula = y ~ x, method = "lm", se = FALSE)
 
-gdp_capita <- lm(rate ~ gdp_capita, data = d)
+hist(resid(density))
+plot(density, which = 1)
+plot(density, which = 2)
+plot(density, which = 4)
 
-ggplot(d, aes(x = gdp_capita, y = rate)) + 
+### Population
+population <- lm(rate ~ population, data = overall)
+summary(population)
+
+ggplot(overall, aes(x = population, y = rate)) + 
   geom_point() + 
   geom_smooth(formula = y ~ x, method = "lm", se = FALSE)
 
-income <- lm(rate ~ income, data = d)
-income
+hist(resid(population))
+plot(population, which = 1)
+plot(population, which = 2)
+plot(population, which = 4)
 
-d <- d %>% mutate(income = factor(income,
-  levels = c("Low income", "Lower middle income", 
-             "Upper middle income", "High income")))
+overall <- overall %>% mutate(logpopulation = log(population))
 
-ggplot(d, aes(x = income, y = rate)) + 
+population <- lm(lograte ~ logpopulation, data = overall)
+summary(population)
+
+ggplot(overall, aes(x = logpopulation, y = lograte)) + 
   geom_point() + 
   geom_smooth(formula = y ~ x, method = "lm", se = FALSE)
+
+hist(resid(population))
+plot(population, which = 1)
+plot(population, which = 2)
+plot(population, which = 4)
+
+### GDP
+gdp_capita <- lm(rate ~ gdp_capita, data = overall)
+summary(gdp_capita)
+
+ggplot(overall, aes(x = gdp_capita, y = rate)) + 
+  geom_point() + 
+  geom_smooth(formula = y ~ x, method = "lm", se = FALSE)
+
+hist(resid(gdp_capita))
+plot(gdp_capita, which = 1)
+plot(gdp_capita, which = 2)
+plot(gdp_capita, which = 4)
+
+overall <- overall %>% mutate(loggdp_capita = log(gdp_capita))
+
+gdp_capita <- lm(lograte ~ loggdp_capita, data = overall)
+summary(gdp_capita)
+
+ggplot(overall, aes(x = loggdp_capita, y = lograte)) + 
+  geom_point() + 
+  geom_smooth(formula = y ~ x, method = "lm", se = FALSE)
+
+hist(resid(gdp_capita))
+plot(gdp_capita, which = 1)
+plot(gdp_capita, which = 2)
+plot(gdp_capita, which = 4)
+
+### Income
+income <- lm(rate ~ income, data = overall)
+summary(income)
+
+overall <- overall %>% mutate(income = factor(income,
+                                  levels = c("Low income", "Lower middle income", 
+                                             "Upper middle income", "High income")))
+
+ggplot(overall, aes(x = income, y = rate)) + 
+  geom_boxplot()
+
+hist(resid(income))
+plot(income, which = 1)
+plot(income, which = 2)
+plot(income, which = 4)
+
+income <- lm(lograte ~ income, data = overall)
+summary(income)
+
+
+ggplot(overall, aes(x = income, y = lograte)) + 
+  geom_boxplot() 
+
+hist(resid(income))
+plot(income, which = 1)
+plot(income, which = 2)
+plot(income, which = 4)
+```
+
+## Challenge 6
+```{r}
+### Challenge 6
+
+m <- lm(data = overall, lograte ~ logdensity + logpopulation + loggdp_capita + income)
+s <- stepAIC(m, scope = . ~ ., direction = "both")
+r.squaredGLMM(m)
+r.squaredGLMM(s)
+```
+
+## Challenge 7
+```{r}
+### Challenge 7
+
+m <- lm(data = overall, lograte ~ logdensity + loggdp_capita + max_sd + max_mr)
+s <- stepAIC(m, scope = . ~ ., direction = "both")
+r.squaredGLMM(m)
+r.squaredGLMM(s)
+```
+
+## Challenge 8
+```{r}
+new <- cv_data %>% 
+  filter(population > 1000000 & variable == "daily_confirmed" & rate > 0)
+
+m1 <- lmer(data = new, rate ~ log(density) + log(gdp_capita) + soc_dist + mov_rest + (1 | country) + (1 | date))
+summary(m1)
+
+lme <- lmer(data = new, log(rate) ~ log(density) + log(gdp_capita) + soc_dist + mov_rest + (1 | country) + (1 | date), 
+            REML = FALSE)
+lme2 <- lmer(data = new, log(rate) ~ log(density) + log(gdp_capita) + soc_dist + (1 | country) + (1 | date), 
+             REML = FALSE)
+lme3 <- lmer(data = new, log(rate) ~ log(density) + log(gdp_capita) + mov_rest + (1 | country) + (1 | date), 
+             REML = FALSE)
+summary(lme3)
+
+lme4 <- lmer(data = new, log(rate) ~ log(density) + soc_dist + mov_rest + (1 | country) + (1 | date), 
+             REML = FALSE)
+
+lme5 <- lmer(data = new, log(rate) ~ log(gdp_capita) + soc_dist + mov_rest + (1 | country) + (1 | date), 
+                  REML = FALSE)
+
+null <- lmer(data = new, log(rate) ~ (1 | country) + (1 | date), REML = FALSE)
+aic_table <- aictab(list(lme, lme2, lme3, lme4, lme5, null))
+aic_table
 ```
