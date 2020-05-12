@@ -289,6 +289,7 @@ The countries with the 10 hightest single-day rate of confirmed cases are: `r da
 
 overall <- na.omit(overall)
 
+## Not transformed
 full <- lm(rate ~ density + population + gdp_capita + income, data = overall)
 full
 summary(full)
@@ -297,6 +298,7 @@ hist(residuals(full))
 qqnorm(residuals(full))
 qqline(residuals(full))
 
+## rate log transformed
 full <- lm(log(rate) ~ density + population + gdp_capita + income, data = overall)
 full
 summary(full)
@@ -305,6 +307,7 @@ hist(residuals(full))
 qqnorm(residuals(full))
 qqline(residuals(full))
 
+## density, population, and gdp_captia also transformed
 full <- full <- lm(log(rate) ~ log(density) + log(population) + log(gdp_capita) + income, data = overall)
 full
 summary(full)
@@ -312,9 +315,8 @@ plot(fitted(full), residuals(full))
 hist(residuals(full))
 qqnorm(residuals(full))
 qqline(residuals(full))
-
-
 ```
+
 Based off the log transformed full model, log(density) and log(gdp_capita) have slopes that are significantly different from 0.
 
 ## Challenge 6
@@ -336,15 +338,20 @@ r.squaredGLMM(s1)
 ```
 The best model for the overall rate of confimred cases based on AIC was found to be log(rate) ~ log(density) + log(population). The pseudo-R2 values for the full model were R2m = `r r.squaredGLMM(m)[1]` and R2c = `r r.squaredGLMM(m)[2]`. The pseudo-R2 values for the 'best' model were R2m = `r r.squaredGLMM(s)[1]` and R2c = `r r.squaredGLMM(s)[2]`.
 
-THe best model for the meximum daily infection rate based on AIC was found to be log(rate) ~ log(density) + log(population) + log(gdp_capita).  The pseudo-R2 values for the full model were R2m = `r r.squaredGLMM(m1)[1]` and R2c = `r r.squaredGLMM(m1)[2]`. The pseudo-R2 values for the 'best' model were R2m = `r r.squaredGLMM(s1)[1]` and R2c = `r r.squaredGLMM(s1)[2]`.
+The best model for the meximum daily infection rate based on AIC was found to be log(rate) ~ log(density) + log(population) + log(gdp_capita).  The pseudo-R2 values for the full model were R2m = `r r.squaredGLMM(m1)[1]` and R2c = `r r.squaredGLMM(m1)[2]`. The pseudo-R2 values for the 'best' model were R2m = `r r.squaredGLMM(s1)[1]` and R2c = `r r.squaredGLMM(s1)[2]`.
 
 ## Challenge 7
 ```{r}
 ### Challenge 7
-add1(m, scope = . ~ . + max_sd + max_mr, test = "F")
+add1(m1, scope = . ~ . + max_sd + max_mr, test = "F")
 m2 <- update(m, formula = . ~ . + max_mr)
 add1(m2, scope = . ~ . + max_sd, test = "F")
+
+r.squaredGLMM(m1)
+r.squaredGLMM(m2)
 ```
+
+Adding max_mr (movement restriction) to the 'best' maximum daily infection rate model improved the AIC score, but was not significant. Adding max_sd (social distancing) was detrimental to AIC score. 
 
 ## Challenge 8
 ```{r}
