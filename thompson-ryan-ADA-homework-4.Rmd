@@ -358,7 +358,7 @@ Adding max_mr (movement restriction) to the 'best' maximum daily infection rate 
 new <- cv_data %>% 
   filter(population > 1000000 & variable == "daily_confirmed" & rate > 0)
 
-m1 <- lmer(data = new, rate ~ log(density) + log(gdp_capita) + soc_dist + mov_rest + (1 | country) + (1 | date))
+m1 <- lmer(data = new, log(rate) ~ log(density) + log(gdp_capita) + soc_dist + mov_rest + (1 | country) + (1 | date))
 summary(m1)
 
 lme <- lmer(data = new, log(rate) ~ log(density) + log(gdp_capita) + soc_dist + mov_rest + (1 | country) + (1 | date), 
@@ -367,16 +367,32 @@ lme2 <- lmer(data = new, log(rate) ~ log(density) + log(gdp_capita) + soc_dist +
              REML = FALSE)
 lme3 <- lmer(data = new, log(rate) ~ log(density) + log(gdp_capita) + mov_rest + (1 | country) + (1 | date), 
              REML = FALSE)
-summary(lme3)
-
 lme4 <- lmer(data = new, log(rate) ~ log(density) + soc_dist + mov_rest + (1 | country) + (1 | date), 
              REML = FALSE)
 
 lme5 <- lmer(data = new, log(rate) ~ log(gdp_capita) + soc_dist + mov_rest + (1 | country) + (1 | date), 
-                  REML = FALSE)
+             REML = FALSE)
 
 null <- lmer(data = new, log(rate) ~ (1 | country) + (1 | date), REML = FALSE)
 
-aic_table <- aictab(list(lme, lme2, lme3, lme4, lme5, null))
-aic_table
+lme6 <- lmer(data = new, log(rate) ~ log(gdp_capita) + (1 | country) + (1 | date), REML = FALSE)
+lme7 <- lmer(data = new, log(rate) ~ log(density) + (1 | country) + (1 | date), REML = FALSE)
+lme8 <- lmer(data = new, log(rate) ~ soc_dist + (1 | country) + (1 | date), REML = FALSE)
+lme9 <- lmer(data = new, log(rate) ~ mov_rest + (1 | country) + (1 | date), REML = FALSE)
+lme10 <- lmer(data = new, log(rate) ~ log(gdp_capita) + log(density) + (1 | country) + (1 | date), REML = FALSE)
+lme11 <- lmer(data = new, log(rate) ~ log(gdp_capita) + soc_dist + (1 | country) + (1 | date), REML = FALSE)
+lme12 <- lmer(data = new, log(rate) ~ log(gdp_capita) + mov_rest + (1 | country) + (1 | date), REML = FALSE)
+lme13 <- lmer(data = new, log(rate) ~ log(gdp_capita) + soc_dist + log(density) + (1 | country) + (1 | date), REML = FALSE)
+lme14 <- lmer(data = new, log(rate) ~ log(gdp_capita) + soc_dist + mov_rest + (1 | country) + (1 | date), REML = FALSE)
+
+
+aic_backward <- aictab(list(lme, lme2, lme3, lme4, lme5))
+aic_backward
+aic_forward <- aictab(list(lme, null, lme6, lme7, lme8, lme9, lme10, lme11, lme12, lme13, lme14))
+aic_forward
+
+r.squaredGLMM(m1)
+r.squaredGLMM(lme)
 ```
+
+Both forward and backward selection show the full mixed effects model has a better AICc score than any simpiler model. The pseudo-R2 values were R2m = `r r.squaredGLMM(lme)[1]` and R2c = `r r.squaredGLMM(lme)[2]`.

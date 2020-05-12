@@ -801,90 +801,69 @@ add1(m2, scope = . ~ . + max_sd, test = &quot;F&quot;)</code></pre>
 <pre class="r"><code>new &lt;- cv_data %&gt;% 
   filter(population &gt; 1000000 &amp; variable == &quot;daily_confirmed&quot; &amp; rate &gt; 0)
 
-m1 &lt;- lmer(data = new, rate ~ log(density) + log(gdp_capita) + soc_dist + mov_rest + (1 | country) + (1 | date))
+m1 &lt;- lmer(data = new, log(rate) ~ log(density) + log(gdp_capita) + soc_dist + mov_rest + (1 | country) + (1 | date))
 summary(m1)</code></pre>
 <pre><code>## Linear mixed model fit by REML [&#39;lmerMod&#39;]
-## Formula: rate ~ log(density) + log(gdp_capita) + soc_dist + mov_rest +  
+## Formula: log(rate) ~ log(density) + log(gdp_capita) + soc_dist + mov_rest +  
 ##     (1 | country) + (1 | date)
 ##    Data: new
 ## 
-## REML criterion at convergence: 71436.2
+## REML criterion at convergence: 25496.7
 ## 
 ## Scaled residuals: 
 ##     Min      1Q  Median      3Q     Max 
-## -5.2738 -0.2974 -0.0644  0.1798 28.2953 
+## -5.7712 -0.5694  0.0755  0.6104  5.1016 
 ## 
 ## Random effects:
 ##  Groups   Name        Variance Std.Dev.
-##  country  (Intercept) 234.92   15.33   
-##  date     (Intercept)  24.11    4.91   
-##  Residual             501.46   22.39   
+##  country  (Intercept) 1.388    1.178   
+##  date     (Intercept) 2.785    1.669   
+##  Residual             1.327    1.152   
 ## Number of obs: 7823, groups:  country, 149; date, 110
 ## 
 ## Fixed effects:
 ##                  Estimate Std. Error t value
-## (Intercept)     -73.37443    8.62735  -8.505
-## log(density)      2.22525    0.98939   2.249
-## log(gdp_capita)   7.28521    0.87674   8.309
-## soc_dist          2.83527    0.10908  25.992
-## mov_rest         -0.43912    0.07433  -5.907
+## (Intercept)     -9.488475   0.669182 -14.179
+## log(density)     0.107144   0.074639   1.435
+## log(gdp_capita)  0.940573   0.066272  14.193
+## soc_dist         0.107862   0.006242  17.281
+## mov_rest        -0.043078   0.004457  -9.666
 ## 
 ## Correlation of Fixed Effects:
 ##             (Intr) lg(dn) lg(g_) sc_dst
-## log(densty) -0.454                     
-## lg(gdp_cpt) -0.853 -0.044              
-## soc_dist    -0.006 -0.004 -0.030       
-## mov_rest     0.000 -0.031 -0.022 -0.277</code></pre>
+## log(densty) -0.442                     
+## lg(gdp_cpt) -0.831 -0.044              
+## soc_dist     0.015 -0.012 -0.037       
+## mov_rest     0.025 -0.031 -0.035 -0.054</code></pre>
 <pre class="r"><code>lme &lt;- lmer(data = new, log(rate) ~ log(density) + log(gdp_capita) + soc_dist + mov_rest + (1 | country) + (1 | date), 
             REML = FALSE)
 lme2 &lt;- lmer(data = new, log(rate) ~ log(density) + log(gdp_capita) + soc_dist + (1 | country) + (1 | date), 
              REML = FALSE)
 lme3 &lt;- lmer(data = new, log(rate) ~ log(density) + log(gdp_capita) + mov_rest + (1 | country) + (1 | date), 
              REML = FALSE)
-summary(lme3)</code></pre>
-<pre><code>## Linear mixed model fit by maximum likelihood  [&#39;lmerMod&#39;]
-## Formula: log(rate) ~ log(density) + log(gdp_capita) + mov_rest + (1 |  
-##     country) + (1 | date)
-##    Data: new
-## 
-##      AIC      BIC   logLik deviance df.resid 
-##  25770.8  25819.6 -12878.4  25756.8     7816 
-## 
-## Scaled residuals: 
-##     Min      1Q  Median      3Q     Max 
-## -5.7550 -0.5547  0.0738  0.5993  5.4946 
-## 
-## Random effects:
-##  Groups   Name        Variance Std.Dev.
-##  country  (Intercept) 1.215    1.102   
-##  date     (Intercept) 3.962    1.990   
-##  Residual             1.373    1.172   
-## Number of obs: 7823, groups:  country, 149; date, 110
-## 
-## Fixed effects:
-##                 Estimate Std. Error t value
-## (Intercept)     -9.69924    0.63895 -15.180
-## log(density)     0.12318    0.07004   1.759
-## log(gdp_capita)  0.98514    0.06213  15.856
-## mov_rest        -0.04097    0.00452  -9.065
-## 
-## Correlation of Fixed Effects:
-##             (Intr) lg(dn) lg(g_)
-## log(densty) -0.434              
-## lg(gdp_cpt) -0.817 -0.044       
-## mov_rest     0.028 -0.035 -0.040</code></pre>
-<pre class="r"><code>lme4 &lt;- lmer(data = new, log(rate) ~ log(density) + soc_dist + mov_rest + (1 | country) + (1 | date), 
+lme4 &lt;- lmer(data = new, log(rate) ~ log(density) + soc_dist + mov_rest + (1 | country) + (1 | date), 
              REML = FALSE)
 
 lme5 &lt;- lmer(data = new, log(rate) ~ log(gdp_capita) + soc_dist + mov_rest + (1 | country) + (1 | date), 
-                  REML = FALSE)
+             REML = FALSE)
 
 null &lt;- lmer(data = new, log(rate) ~ (1 | country) + (1 | date), REML = FALSE)
 
-aic_table &lt;- aictab(list(lme, lme2, lme3, lme4, lme5, null))</code></pre>
-<pre><code>## Warning in aictab.AIClmerMod(list(lme, lme2, lme3, lme4, lme5, null)): 
+lme6 &lt;- lmer(data = new, log(rate) ~ log(gdp_capita) + (1 | country) + (1 | date), REML = FALSE)
+lme7 &lt;- lmer(data = new, log(rate) ~ log(density) + (1 | country) + (1 | date), REML = FALSE)
+lme8 &lt;- lmer(data = new, log(rate) ~ soc_dist + (1 | country) + (1 | date), REML = FALSE)
+lme9 &lt;- lmer(data = new, log(rate) ~ mov_rest + (1 | country) + (1 | date), REML = FALSE)
+lme10 &lt;- lmer(data = new, log(rate) ~ log(gdp_capita) + log(density) + (1 | country) + (1 | date), REML = FALSE)
+lme11 &lt;- lmer(data = new, log(rate) ~ log(gdp_capita) + soc_dist + (1 | country) + (1 | date), REML = FALSE)
+lme12 &lt;- lmer(data = new, log(rate) ~ log(gdp_capita) + mov_rest + (1 | country) + (1 | date), REML = FALSE)
+lme13 &lt;- lmer(data = new, log(rate) ~ log(gdp_capita) + soc_dist + log(density) + (1 | country) + (1 | date), REML = FALSE)
+lme14 &lt;- lmer(data = new, log(rate) ~ log(gdp_capita) + soc_dist + mov_rest + (1 | country) + (1 | date), REML = FALSE)
+
+
+aic_backward &lt;- aictab(list(lme, lme2, lme3, lme4, lme5))</code></pre>
+<pre><code>## Warning in aictab.AIClmerMod(list(lme, lme2, lme3, lme4, lme5)): 
 ## Model names have been supplied automatically in the table</code></pre>
-<pre class="r"><code>aic_table</code></pre>
+<pre class="r"><code>aic_backward</code></pre>
 <pre><code>## 
 ## Model selection based on AICc:
 ## 
@@ -893,8 +872,33 @@ aic_table &lt;- aictab(list(lme, lme2, lme3, lme4, lme5, null))</code></pre>
 ## Mod2 7 25573.72      86.82      0      1 -12779.86
 ## Mod5 7 25687.35     200.45      0      1 -12836.67
 ## Mod3 7 25770.81     283.91      0      1 -12878.40
-## Mod4 7 25771.38     284.47      0      1 -12878.68
-## Mod6 4 26634.61    1147.71      0      1 -13313.30</code></pre>
+## Mod4 7 25771.38     284.47      0      1 -12878.68</code></pre>
+<pre class="r"><code>aic_forward &lt;- aictab(list(lme, null, lme6, lme7, lme8, lme9, lme10, lme11, lme12, lme13, lme14))</code></pre>
+<pre><code>## Warning in aictab.AIClmerMod(list(lme, null, lme6, lme7, lme8, lme9, lme10, : 
+## Model names have been supplied automatically in the table</code></pre>
+<pre class="r"><code>aic_forward</code></pre>
+<pre><code>## 
+## Model selection based on AICc:
+## 
+##       K     AICc Delta_AICc AICcWt Cum.Wt        LL
+## Mod1  8 25486.90       0.00      1      1 -12735.44
+## Mod10 7 25573.72      86.82      0      1 -12779.86
+## Mod11 7 25687.35     200.45      0      1 -12836.67
+## Mod8  6 25770.91     284.01      0      1 -12879.45
+## Mod7  6 25847.77     360.87      0      1 -12917.88
+## Mod9  6 25978.78     491.88      0      1 -12983.39
+## Mod5  5 26051.51     564.61      0      1 -13020.75
+## Mod3  5 26052.46     565.56      0      1 -13021.22
+## Mod6  5 26283.39     796.49      0      1 -13136.69
+## Mod4  5 26426.13     939.23      0      1 -13208.06
+## Mod2  4 26634.61    1147.71      0      1 -13313.30</code></pre>
+<pre class="r"><code>r.squaredGLMM(m1)</code></pre>
+<pre><code>##            R2m      R2c
+## [1,] 0.2856788 0.827687</code></pre>
+<pre class="r"><code>r.squaredGLMM(lme)</code></pre>
+<pre><code>##            R2m      R2c
+## [1,] 0.2873089 0.826713</code></pre>
+<p>Both forward and backward selection show the full mixed effects model has a better AICc score than any simpiler model. The pseudo-R2 values were R2m = 0.2873089 and R2c = 0.826713.</p>
 </div>
 
 
