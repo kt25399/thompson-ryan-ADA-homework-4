@@ -20,7 +20,6 @@ library(scales) # for log y axis scale
 library(collapse) # for `fmode()` to find mode
 library(BBmisc) # for %nin%
 library(devtools)
-remotes::install_github("joachim-gassen/tidycovid19")
 library(tidycovid19)
 library(MuMIn)
 library(lme4)
@@ -35,6 +34,13 @@ merged <- download_merged_data(cached = TRUE)
 merged <- merged %>%
   group_by(country, iso3c) %>%
   arrange(country, iso3c, date) %>%
+  ## new code to replace NAs with zeros
+  mutate(
+    confirmed = ifelse(is.na(confirmed), 0, confirmed),
+    deaths = ifelse(is.na(deaths), 0, deaths),
+    recovered = ifelse(is.na(recovered), 0, recovered)
+  ) %>%
+  ## end of new code
   mutate(
     daily_confirmed = confirmed - lag(confirmed, n = 1),
     daily_deaths = deaths - lag(deaths, n = 1),
@@ -52,8 +58,10 @@ add_world1 <- merged %>%
   group_by(date) %>%
   arrange(date) %>%
   summarize(
-    country = "World", iso3c = NA, confirmed = sum(confirmed),
-    deaths = sum(deaths), recovered = sum(recovered),
+    country = "World", iso3c = NA,
+    confirmed = sum(confirmed, na.rm = TRUE),
+    deaths = sum(deaths, na.rm = TRUE),
+    recovered = sum(recovered, na.rm = TRUE),
     timestamp = fmode(timestamp)
   ) %>%
   mutate(
@@ -88,20 +96,22 @@ add_world <- left_join(add_world1, add_world2, by = c("country", "iso3c"))
 merged <- bind_rows(merged, add_world)
 
 cv_data <- pivot_longer(merged,
-                        cols = c(
-                          "confirmed", "deaths", "recovered",
-                          "daily_confirmed", "daily_deaths", "daily_recovered"
-                        ),
-                        names_to = "variable", values_to = "cases"
+  cols = c(
+    "confirmed", "deaths", "recovered",
+    "daily_confirmed", "daily_deaths", "daily_recovered"
+  ),
+  names_to = "variable", values_to = "cases"
 ) %>%
   arrange(country, variable, date) %>%
   rename(area = land_area_skm, density = pop_density) %>%
-  mutate(rate = cases / population * 10^6)
+  mutate(rate = cases / population * 10^6) %>%
+  ## new code to omit data before 2020-05-11
+  filter(date < "2020-05-11")
 
 cv_summary <- function(d, country_list = "World",
                        plot = TRUE, facet = "country",
                        status = c("confirmed", "deaths", "recovered")) {
-  
+
   # based on `wes_palettes()` GrandBudapest1, IsleofDogs1, IsleofDogs2
   # from the {wesanderson} package
   my_palette <- c(
@@ -109,27 +119,27 @@ cv_summary <- function(d, country_list = "World",
     "#0F0D0E", "#9986A5", "#79402E", "#CCBA72", "#D9D0D3", "#8D8680",
     "#EAD3BF", "#AA9486", "#B6854D", "#39312F", "#1C1718"
   )
-  
+
   if (facet == "country") {
     fill <- "variable"
     n <- length(unique(d$variable)) / 2
     # need only half of unique # of variable (3)
   }
-  
+
   if (facet == "variable") {
     fill <- "country"
     n <- length(country_list)
     # need number of countries
   }
-  
+
   if ("All" %in% country_list) {
     country_list <- unique(d$country)
     country_list <- setdiff(country_list, "World")
   }
-  
+
   if ("World" %in% country_list) {
     d <- d %>% filter(country %in% country_list)
-    
+
     totals <- d %>%
       group_by(variable) %>%
       summarize(
@@ -145,7 +155,7 @@ cv_summary <- function(d, country_list = "World",
       arrange(variable) %>%
       ungroup()
   }
-  
+
   if ("World" %nin% country_list) {
     d <- d %>% filter(country %in% country_list)
     totals <- d %>%
@@ -170,7 +180,7 @@ cv_summary <- function(d, country_list = "World",
       arrange(country, variable) %>%
       ungroup()
   }
-  
+
   if (plot == TRUE) {
     cc <- filter(d, variable %in% status)
     cum_cases_plot <- ggplot(
@@ -197,7 +207,7 @@ cv_summary <- function(d, country_list = "World",
         aesthetics = c("color", "fill"),
         name = NULL, values = my_palette
       )
-    
+
     dc <- filter(d, variable %in% paste0("daily_", status))
     daily_cases_plot <- ggplot(
       data = dc,
@@ -216,7 +226,7 @@ cv_summary <- function(d, country_list = "World",
         name = NULL, values = my_palette
       )
   }
-  
+
   if (plot == TRUE) {
     return(list(
       totals = totals,
@@ -227,12 +237,6 @@ cv_summary <- function(d, country_list = "World",
     return(list(totals = totals))
   }
 }
-```
-
-## Challenge 1
-```{r}
-### Challenge 1
-cv_summary(d = cv_data)
 ```
 
 ## Challenge 2
