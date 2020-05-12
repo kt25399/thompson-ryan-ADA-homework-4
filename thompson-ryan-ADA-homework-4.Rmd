@@ -285,124 +285,58 @@ The countries with the 10 hightest single-day rate of confirmed cases are: `r da
 
 ## Challenge 5
 ```{r}
-### Density
-density <- lm(rate ~ density, data = overall)
-summary(density)
+### Challenge 5
 
-ggplot(overall, aes(x = density, y = rate)) +
-  geom_point() + 
-  geom_smooth(formula = y ~ x, method = "lm", se = FALSE)
+overall <- na.omit(overall)
 
-hist(resid(density))
-plot(density, which = 1)
-plot(density, which = 2)
+full <- lm(rate ~ density + population + gdp_capita + income, data = overall)
+full
+summary(full)
+plot(fitted(full), residuals(full))
+hist(residuals(full))
+qqnorm(residuals(full))
+qqline(residuals(full))
 
-overall <- overall %>% mutate(logdensity = log(density), lograte = log(rate + 1))
+full <- lm(log(rate) ~ density + population + gdp_capita + income, data = overall)
+full
+summary(full)
+plot(fitted(full), residuals(full))
+hist(residuals(full))
+qqnorm(residuals(full))
+qqline(residuals(full))
 
-density <- lm(lograte ~ logdensity, data = overall)
-summary(density)
-
-ggplot(overall, aes(x = logdensity, y = lograte)) +
-  geom_point() + 
-  geom_smooth(formula = y ~ x, method = "lm", se = FALSE)
-
-hist(resid(density))
-plot(density, which = 1)
-plot(density, which = 2)
-plot(density, which = 4)
-
-### Population
-population <- lm(rate ~ population, data = overall)
-summary(population)
-
-ggplot(overall, aes(x = population, y = rate)) + 
-  geom_point() + 
-  geom_smooth(formula = y ~ x, method = "lm", se = FALSE)
-
-hist(resid(population))
-plot(population, which = 1)
-plot(population, which = 2)
-plot(population, which = 4)
-
-overall <- overall %>% mutate(logpopulation = log(population))
-
-population <- lm(lograte ~ logpopulation, data = overall)
-summary(population)
-
-ggplot(overall, aes(x = logpopulation, y = lograte)) + 
-  geom_point() + 
-  geom_smooth(formula = y ~ x, method = "lm", se = FALSE)
-
-hist(resid(population))
-plot(population, which = 1)
-plot(population, which = 2)
-plot(population, which = 4)
-
-### GDP
-gdp_capita <- lm(rate ~ gdp_capita, data = overall)
-summary(gdp_capita)
-
-ggplot(overall, aes(x = gdp_capita, y = rate)) + 
-  geom_point() + 
-  geom_smooth(formula = y ~ x, method = "lm", se = FALSE)
-
-hist(resid(gdp_capita))
-plot(gdp_capita, which = 1)
-plot(gdp_capita, which = 2)
-plot(gdp_capita, which = 4)
-
-overall <- overall %>% mutate(loggdp_capita = log(gdp_capita))
-
-gdp_capita <- lm(lograte ~ loggdp_capita, data = overall)
-summary(gdp_capita)
-
-ggplot(overall, aes(x = loggdp_capita, y = lograte)) + 
-  geom_point() + 
-  geom_smooth(formula = y ~ x, method = "lm", se = FALSE)
-
-hist(resid(gdp_capita))
-plot(gdp_capita, which = 1)
-plot(gdp_capita, which = 2)
-plot(gdp_capita, which = 4)
-
-### Income
-income <- lm(rate ~ income, data = overall)
-summary(income)
-
-overall <- overall %>% mutate(income = factor(income,
-                                  levels = c("Low income", "Lower middle income", 
-                                             "Upper middle income", "High income")))
-
-ggplot(overall, aes(x = income, y = rate)) + 
-  geom_boxplot()
-
-hist(resid(income))
-plot(income, which = 1)
-plot(income, which = 2)
-plot(income, which = 4)
-
-income <- lm(lograte ~ income, data = overall)
-summary(income)
+full <- full <- lm(log(rate) ~ log(density) + log(population) + log(gdp_capita) + income, data = overall)
+full
+summary(full)
+plot(fitted(full), residuals(full))
+hist(residuals(full))
+qqnorm(residuals(full))
+qqline(residuals(full))
 
 
-ggplot(overall, aes(x = income, y = lograte)) + 
-  geom_boxplot() 
-
-hist(resid(income))
-plot(income, which = 1)
-plot(income, which = 2)
-plot(income, which = 4)
 ```
+Based off the log transformed full model, log(density) and log(gdp_capita) have slopes that are significantly different from 0.
 
 ## Challenge 6
 ```{r}
 ### Challenge 6
 
-m <- lm(data = overall, lograte ~ logdensity + logpopulation + loggdp_capita + income)
+m <- lm(data = overall, log(rate) ~ log(density) + log(population) + log(gdp_capita) + income)
 s <- stepAIC(m, scope = . ~ ., direction = "both")
 r.squaredGLMM(m)
 r.squaredGLMM(s)
+
+daily <- na.omit(daily)
+
+m1 <- lm(data = daily, log(rate) ~ log(density) + log(population) + log(gdp_capita) + income)
+s1 <- stepAIC(m1, scope = . ~ ., direction = "both")
+r.squaredGLMM(m1)
+r.squaredGLMM(s1)
+
 ```
+The best model for the overall rate of confimred cases based on AIC was found to be log(rate) ~ log(density) + log(population). The pseudo-R2 values for the full model were R2m = `r r.squaredGLMM(m)[1]` and R2c = `r r.squaredGLMM(m)[2]`. The pseudo-R2 values for the 'best' model were R2m = `r r.squaredGLMM(s)[1]` and R2c = `r r.squaredGLMM(s)[2]`.
+
+THe best model for the meximum daily infection rate based on AIC was found to be log(rate) ~ log(density) + log(population) + log(gdp_capita).  The pseudo-R2 values for the full model were R2m = `r r.squaredGLMM(m1)[1]` and R2c = `r r.squaredGLMM(m1)[2]`. The pseudo-R2 values for the 'best' model were R2m = `r r.squaredGLMM(s1)[1]` and R2c = `r r.squaredGLMM(s1)[2]`.
 
 ## Challenge 7
 ```{r}
