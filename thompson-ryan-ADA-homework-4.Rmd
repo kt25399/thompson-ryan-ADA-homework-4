@@ -239,14 +239,26 @@ cv_summary <- function(d, country_list = "World",
 }
 ```
 
+## Challenge 1
+```{r}
+### Challenge 1
+cv_summary(d = cv_data)
+```
+
 ## Challenge 2
 ```{r}
 ### Challenge 2
-cv_summary(d = cv_data, country_list = c("US", "United Kingdom", 
+## by country
+cv_summary(d = cv_data, country_list = c("United States", "United Kingdom", 
                                          "Canada", "France", "Germany", 
                                          "Italy", "Japan", "China",
                                          "Russia", "Iran"))
-
+## by variable
+cv_summary(d = cv_data, country_list = c("United States", "United Kingdom", 
+                                         "Canada", "France", "Germany", 
+                                         "Italy", "Japan", "China",
+                                         "Russia", "Iran"),
+           facet = "variable")
 ```
 
 ## Challenge 3
@@ -256,6 +268,7 @@ d <- cv_summary(d = cv_data, country_list = "All", plot = FALSE)
 d <- d[[1]] %>% filter(population > 1000000)
 length(unique(d$country))
 ```
+There are `r length(unique(d$country))` countries included in this tibble.
 
 ## Challenge 4
 ```{r}
@@ -266,6 +279,9 @@ daily <- d %>% filter(variable == "daily_confirmed") %>% arrange(desc(cases))
 head(overall, 10)
 head(daily, 10)
 ```
+The countries with the 10 highest overall rate of confimred cases are: `r overall$country[1]`, `r overall$country[2]`, `r overall$country[3]`, `r overall$country[4]`, `r overall$country[5]`, `r overall$country[6]`, `r overall$country[7]`, `r overall$country[8]`, `r overall$country[9]`, `r overall$country[10]`.
+
+The countries with the 10 hightest single-day rate of confirmed cases are: `r daily$country[1]`, `r daily$country[2]`, `r daily$country[3]`, `r daily$country[4]`, `r daily$country[5]`, `r daily$country[6]`, `r daily$country[7]`, `r daily$country[8]`, `r daily$country[9]`, `r daily$country[10]`.
 
 ## Challenge 5
 ```{r}
@@ -391,11 +407,9 @@ r.squaredGLMM(s)
 ## Challenge 7
 ```{r}
 ### Challenge 7
-
-m <- lm(data = overall, lograte ~ logdensity + loggdp_capita + max_sd + max_mr)
-s <- stepAIC(m, scope = . ~ ., direction = "both")
-r.squaredGLMM(m)
-r.squaredGLMM(s)
+add1(m, scope = . ~ . + max_sd + max_mr, test = "F")
+m2 <- update(m, formula = . ~ . + max_mr)
+add1(m2, scope = . ~ . + max_sd, test = "F")
 ```
 
 ## Challenge 8
